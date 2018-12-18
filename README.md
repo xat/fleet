@@ -3,9 +3,9 @@
 Manage a fleet of Confluence instances with ease. For development and testing purposes.
 
 <p align="center">
-	<br>
-	<img src="screencast.svg" width="500">
-	<br>
+  <br>
+    <img src="https://sope.io/fleet/screencast.svg" width="650">
+  <br>
 </p>
 
 ## Features
@@ -83,7 +83,7 @@ fleet info <id>
 
 * **id** The id of the instance
 
-#### Clone a instance
+#### Clone an instance
 
 ```
 fleet clone <id> <newId> [--version=<confluence-version>] [--<setting>=<value>]
@@ -94,9 +94,9 @@ fleet clone <id> <newId> [--version=<confluence-version>] [--<setting>=<value>]
 * **--version=&lt;confluence-version&gt;** The Confluence version of the duplicate
 * **--&lt;setting&gt;=&lt;value&gt;** See [available settings](#settings)
 
-#### Rebuild a instance
+#### Rebuild an instance
 
-Rebuilding a instance means that its Docker containers will be re-recreated.
+Rebuilding an instance means that its Docker containers will be re-recreated.
 
 ```
 fleet rebuild <id>
@@ -110,7 +110,7 @@ fleet rebuild <id>
 fleet rebuild-all
 ```
 
-#### Set a instance to be the master
+#### Set an instance to be the master
 
 One instance in the fleet can be the master instance. The master Confluence instance will listen on port 8090. 
 
@@ -120,9 +120,9 @@ fleet master <id>
 
 * **id** The id of the instance
 
-#### Remove a instance
+#### Remove an instance
 
-Removing a instance will delete its Docker containers as well as the Confluence home directory and the database.
+Removing an instance will delete its Docker containers as well as the Confluence home directory and the database.
 
 ```
 fleet remove <id>
@@ -132,7 +132,7 @@ fleet remove <id>
 
 #### Change global settings
 
-Settings can be defined globally and and on a instance level. Settings on a instance level are prioritized over global settings. This means that you can define common settings globally and then overwrite them on a instance level.
+Settings can be defined globally and and on an instance level. Settings on an instance level are prioritized over global settings. This means that you can define common settings globally and then overwrite them on an instance level.
 
 ```
 fleet global-settings [--<setting>=<value>]
@@ -142,7 +142,7 @@ fleet global-settings [--<setting>=<value>]
 
 #### Change the settings of a specific instance
 
-After changing the settings of a instance you will likely need to rebuild it.
+After changing the settings of an instance you will likely need to rebuild it.
 
 ```
 fleet settings <id> [--<setting>=<value>]
@@ -151,7 +151,7 @@ fleet settings <id> [--<setting>=<value>]
 * **id** The id of the instance
 * **--&lt;setting&gt;=&lt;value&gt;** See [available settings](#settings)
 
-#### Export a instance
+#### Export an instance
 
 The export will include the Confluence home directory and the database.
 
@@ -161,7 +161,7 @@ fleet export <id> > <filename.tar>
 
 * **id** The id of the instance
 
-#### Import a instance
+#### Import an instance
 
 ```
 cat <filename.tar> | fleet import <id> [--version=<confluence-version>] [--start] [--open] [--<setting>=<value>]

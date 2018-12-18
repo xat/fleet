@@ -33,19 +33,19 @@ function printHelp() {
     # Show information about a specific instance:
     fleet info <id>
 
-    # Clone a instance:
+    # Clone an instance:
     fleet clone <id> <newId> [--version=<confluence-version>] [--<setting>=<value>]
 
-    # Rebuild a instance:
+    # Rebuild an instance:
     fleet rebuild <id>
 
     # Rebuild all instances:
     fleet rebuild-all
 
-    # Set a instance to be the master:
+    # Set an instance to be the master:
     fleet master <id>
 
-    # Remove a instance:
+    # Remove an instance:
     fleet remove <id>
 
     # Change global settings:
@@ -54,10 +54,10 @@ function printHelp() {
     # Change the settings of a specific instance:
     fleet settings <id> [--<setting>=<value>]
 
-    # Export a instance:
+    # Export an instance:
     fleet export <id> > <filename.tar>
 
-    # Import a instance:
+    # Import an instance:
     cat <filename.tar> | fleet import <id> [--version=<confluence-version>] [--start] [--open] [--<setting>=<value>]
   `);
 }
