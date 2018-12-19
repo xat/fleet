@@ -1,6 +1,6 @@
 {
   "name": "@xat/fleet",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "fleet.js",
   "scripts": {
     "format": "prettier --single-quote --tab-width 2 --print-width 140 --write '**/*.js'"
