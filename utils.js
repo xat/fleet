@@ -61,7 +61,6 @@ function init(implementationType) {
   mkdirp.sync(MOUNTS_PATH);
 
   if (!fs.existsSync(getSettingsPath(implementationType))) {
-    console.log(implementationType);
     saveSettings(implementationType, getDefaultSettings(implementationType));
   }
 }
@@ -355,8 +354,6 @@ async function createSocatContainer(instanceId) {
       externalPort: staticPort
     }));
 
-  console.log(mappings);
-
   const exposedPorts = mappings.reduce((memo, { internalPort }) => {
     memo[`${internalPort}/tcp`] = {};
     return memo;
@@ -394,7 +391,6 @@ async function importInstance(instanceId, importStream) {
   return new Promise(function(resolve, reject) {
     endOfStream(importStream.pipe(tarfs.extract(mountPath)), function(err) {
       if (err) {
-        console.log('eos err', err);
         reject(err);
       } else {
         resolve();
