@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const minimist = require('minimist');
-const open = require('open');
+const open = require('opn');
 const ora = require('ora');
 const Table = require('easy-table');
 const chalk = require('chalk');
@@ -155,7 +155,7 @@ const commands = {
       });
 
       if (opts.open) {
-        open(meta.baseUrl);
+        open(meta.baseUrl, { wait: false });
         spinner.info(`Opened instance "${instanceId}" in the browser`);
       }
 
@@ -178,7 +178,7 @@ const commands = {
   open: buildCommand(async function(spinner, instanceId) {
     try {
       const baseUrl = (await fleet.info(instanceId)).baseUrl;
-      open(baseUrl);
+      open(baseUrl, { wait: false });
       spinner.info(`Opened instance "${instanceId}" in the browser`);
     } catch (err) {
       spinner.fail(err.message);

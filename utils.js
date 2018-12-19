@@ -138,9 +138,9 @@ async function pullImage(name, onProgress = noop) {
   });
 }
 
-async function pullImageIfNotExists(name) {
+async function pullImageIfNotExists(name, onProgress = noop) {
   const image = await getImageByName(name);
-  return image || pullImage(imageName, onProgress);
+  return image || pullImage(name, onProgress);
 }
 
 // TODO: make this function more robust.. handle error cases
@@ -354,6 +354,8 @@ async function createSocatContainer(instanceId) {
       internalPort: internalPort,
       externalPort: staticPort
     }));
+
+  console.log(mappings);
 
   const exposedPorts = mappings.reduce((memo, { internalPort }) => {
     memo[`${internalPort}/tcp`] = {};
