@@ -311,7 +311,7 @@ const commands = {
       const type = opts.type || 'confluence';
       const availableSettings = await fleet.getAvailableSettings(null, type);
       const settings = extractSettingsFromOpts(availableSettings);
-      fleet.updateSettings(settings);
+      fleet.updateSettings(type, settings);
       spinner.info('Updated global settings');
       spinner.info('You might need to rebuild the instances');
     } catch (err) {

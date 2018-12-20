@@ -31,14 +31,12 @@ function getAvailableSettings() {
 }
 
 async function getDynamicConfluenceBasePath(instanceId) {
-  const settings = utils.getMergedInstanceSettings(instanceId);
   const portMappings = await utils.getPortMappings(instanceId);
 
   return `http://localhost:${portMappings.confluence.dynamicPort}${CONFLUENCE_CONTEXT_PATH}`;
 }
 
 async function getMasterConfluenceBasePath(instanceId) {
-  const settings = utils.getMergedInstanceSettings(instanceId);
   const portMappings = await utils.getPortMappings(instanceId);
 
   return `http://localhost:${portMappings.confluence.staticPort}${CONFLUENCE_CONTEXT_PATH}`;

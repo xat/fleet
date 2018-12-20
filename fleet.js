@@ -110,7 +110,7 @@ async function list() {
 }
 
 async function rebuildAll() {
-  const instanceIds = fs.readdirSync(utils.MOUNTS_PATH);
+  const instanceIds = fs.readdirSync(utils.MOUNTS_PATH).filter(instanceId => instanceId !== '.DS_Store');
 
   for (const instanceId of instanceIds) {
     try {
