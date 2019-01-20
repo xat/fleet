@@ -157,7 +157,7 @@ const commands = {
     } catch (err) {
       spinner.fail(err.message);
     }
-  }),
+  }, true, false),
 
   start: buildCommand(async function(spinner, instanceId) {
     try {
