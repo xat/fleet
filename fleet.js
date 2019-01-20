@@ -95,6 +95,10 @@ async function master(instanceId) {
   await utils.startContainer(socatContainer.Id);
 }
 
+async function getMasterInstanceId(fallbackImplementationType = 'confluence') {
+  return implementations[fallbackImplementationType].getMasterInstanceId();
+}
+
 async function createExportStream(instanceId) {
   return (await getImplementation(instanceId)).createExportStream(instanceId);
 }
@@ -142,5 +146,6 @@ module.exports = {
   createExportStream,
   updateSettings: utils.updateSettings,
   updateInstanceSettings: utils.updateInstanceSettings,
-  getAvailableSettings
+  getAvailableSettings,
+  getMasterInstanceId
 };

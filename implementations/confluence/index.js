@@ -71,6 +71,11 @@ async function isMaster(instanceId) {
   return socatContainer && socatContainer.Labels[utils.INSTANCE_ID_LABEL] === instanceId;
 }
 
+async function getMasterInstanceId() {
+  const socatContainer = await utils.getSocatContainer();
+  return socatContainer && socatContainer.Labels[utils.INSTANCE_ID_LABEL];
+}
+
 async function getConfluenceContainers() {
   const containers = await utils.getAllContainers();
   return containers.filter(({ Labels }) => Labels[utils.CONTAINER_TYPE_LABEL] === 'confluence');
@@ -88,11 +93,11 @@ async function getPostgresContainer(instanceId) {
     .find(({ Labels }) => Labels[utils.INSTANCE_ID_LABEL] === instanceId);
 }
 
-async function createPostgresContainer(instanceId, portRange) {
+async function createPostgresContainer(instanceId, portRange, settings) {
   const portMappings = await utils.getPortMappings(instanceId, portRange);
 
   return utils.createContainer(getPostgresContainterName(instanceId), {
-    Image: POSTGRES_IMAGE_NAME,
+    Image: settings['postgres-image-name'] || POSTGRES_IMAGE_NAME,
     ExposedPorts: {
       [`${POSTGRES_PORT}/tcp`]: {}
     },
@@ -189,13 +194,15 @@ async function createConfluenceContainer(instanceId, portRange) {
   });
 }
 
-async function buildConfluenceImage(settings) {
+async function buildConfluenceImage(settings, instanceId) {
+  const baseConfluenceImageName = `atlassian/confluence-server:${settings.version}-ubuntu-18.04-adoptopenjdk8`;
   // TODO: should we give the user the possibility to define a custom docker file?
   return utils.buildImageFromDockerfile(
     `
-        FROM atlassian/confluence-server:${settings.version}-ubuntu-18.04-adoptopenjdk8
+        FROM ${baseConfluenceImageName}
         RUN apt-get update && apt-get install -y xmlstarlet
         RUN xmlstarlet ed -P --inplace --update "//Context[contains(@docBase,'../confluence')]/@path" --value "${CONFLUENCE_CONTEXT_PATH}" /opt/atlassian/confluence/conf/server.xml
+        RUN xmlstarlet ed -P --inplace --insert "/Context" --type attr -n "sessionCookieName" -v "${instanceId.toUpperCase()}_SESSIONID" /opt/atlassian/confluence/conf/context.xml
         RUN mkdir -p /opt/mount-path-1
         RUN mkdir -p /opt/mount-path-2
         RUN mkdir -p /opt/mount-path-3
@@ -232,13 +239,13 @@ async function add(instanceId, instanceSettings = {}, importStream = false, onPr
 
   await utils.createNetworkIfNotExists(networkName);
   onProgress(`Building Confluence image`);
-  await buildConfluenceImage(settings);
+  await buildConfluenceImage(settings, instanceId);
   onProgress(`Creating Confluence container`);
   await createConfluenceContainer(instanceId, portRange);
   onProgress(`Pulling Postgres image`);
-  await utils.pullImageIfNotExists(POSTGRES_IMAGE_NAME);
+  await utils.pullImageIfNotExists(settings['postgres-image-name'] || POSTGRES_IMAGE_NAME);
   onProgress(`Creating Postgres container`);
-  await createPostgresContainer(instanceId, portRange);
+  await createPostgresContainer(instanceId, portRange, settings);
 }
 
 async function start(instanceId, onProgress = noop) {
@@ -249,6 +256,12 @@ async function start(instanceId, onProgress = noop) {
   await utils.startContainer(postgresContainer.Id);
   onProgress(`Starting Confluence container`);
   await utils.startContainer(confluenceContainer.Id);
+
+  if (await isMaster(instanceId)) {
+    // make sure the socat container gets started
+    const socatContainer = await utils.getSocatContainer();
+    await utils.startContainer(socatContainer.Id);
+  }
 
   const baseUrl = await getConfluenceBaseUrl(instanceId);
 
@@ -288,13 +301,12 @@ async function info(instanceId) {
   const baseUrl = master ? await getMasterConfluenceBasePath(instanceId) : await getDynamicConfluenceBasePath(instanceId);
   const status = confluenceContainter.State;
 
-  return {
+  return Object.assign({}, settings, {
     id: instanceId,
     isMaster: master,
     status,
-    version: settings.version,
     baseUrl
-  };
+  });
 }
 
 async function list() {
@@ -324,9 +336,9 @@ async function rebuild(instanceId) {
 
   await remove(instanceId);
 
-  await buildConfluenceImage(settings);
+  await buildConfluenceImage(settings, instanceId);
   await createConfluenceContainer(instanceId, portRange);
-  await createPostgresContainer(instanceId, portRange);
+  await createPostgresContainer(instanceId, portRange, settings);
 }
 
 async function createExportStream(instanceId) {
@@ -358,5 +370,6 @@ module.exports = {
   list,
   rebuild,
   createExportStream,
-  getAvailableSettings
+  getAvailableSettings,
+  getMasterInstanceId
 };

@@ -79,12 +79,24 @@ function extractSettingsFromOpts(availableSettings) {
 function printList(data, transposed = false) {
   const table = new Table();
 
-  data.forEach(({ id, status, baseUrl, version, isMaster }) => {
+  data.forEach(({ id, status, baseUrl, version, isMaster, ...otherData }) => {
     table.cell('ID', id);
     table.cell('Status', status === 'running' ? chalk.green(status) : status);
     table.cell('Version', version);
     table.cell('URL', baseUrl);
     table.cell('Master', isMaster ? '*' : '-');
+
+    if (transposed) {
+      table.cell('jvm-minimum-memory', otherData['jvm-minimum-memory']);
+      table.cell('jvm-maximum-memory', otherData['jvm-maximum-memory']);
+      table.cell('port-mappings', otherData['port-mappings']);
+      table.cell('mount-path-1', otherData['mount-path-1']);
+      table.cell('mount-path-2', otherData['mount-path-2']);
+      table.cell('mount-path-3', otherData['mount-path-3']);
+      table.cell('mount-path-4', otherData['mount-path-4']);
+      table.cell('mount-path-5', otherData['mount-path-5']);
+    }
+
     table.newRow();
   });
 
@@ -97,13 +109,17 @@ function printList(data, transposed = false) {
   }
 }
 
-function buildCommand(fn, withInstanceId = true) {
-  return () => {
+function buildCommand(fn, withInstanceId = true, defaultToMaster = true) {
+  return async () => {
     const spinner = ora();
     const args = [spinner];
 
     if (withInstanceId) {
-      const instanceId = opts._[1];
+      let instanceId = opts._[1];
+
+      if (!instanceId && defaultToMaster) {
+        instanceId = await fleet.getMasterInstanceId();
+      }
 
       if (!instanceId) {
         spinner.fail(`Missing instance ID`);
@@ -185,17 +201,21 @@ const commands = {
     }
   }),
 
-  master: buildCommand(async function(spinner, instanceId) {
-    try {
-      spinner.start(`Setting instance "${instanceId}" to be master`);
-      await fleet.master(instanceId);
-      spinner.succeed();
-      const baseUrl = (await fleet.info(instanceId)).baseUrl;
-      spinner.info(`Master is now ready: ${baseUrl}`);
-    } catch (err) {
-      spinner.fail(err.message);
-    }
-  }),
+  master: buildCommand(
+    async function(spinner, instanceId) {
+      try {
+        spinner.start(`Setting instance "${instanceId}" to be master`);
+        await fleet.master(instanceId);
+        spinner.succeed();
+        const baseUrl = (await fleet.info(instanceId)).baseUrl;
+        spinner.info(`Master is now ready: ${baseUrl}`);
+      } catch (err) {
+        spinner.fail(err.message);
+      }
+    },
+    true,
+    false
+  ),
 
   settings: buildCommand(async function(spinner, instanceId) {
     try {
@@ -223,66 +243,84 @@ const commands = {
     }
   }),
 
-  remove: buildCommand(async function(spinner) {
-    try {
-      for (instanceId of opts._.slice(1)) {
-        spinner.start(`Removing instance "${instanceId}"`);
-        await fleet.remove(instanceId);
+  remove: buildCommand(
+    async function(spinner) {
+      try {
+        for (instanceId of opts._.slice(1)) {
+          spinner.start(`Removing instance "${instanceId}"`);
+          await fleet.remove(instanceId);
+          spinner.succeed();
+        }
+      } catch (err) {
+        spinner.fail(err.message);
+      }
+    },
+    true,
+    false
+  ),
+
+  rm: (...args) => commands.remove(...args),
+
+  export: buildCommand(
+    async function(spinner, instanceId) {
+      try {
+        (await fleet.createExportStream(instanceId)).pipe(process.stdout);
+      } catch (err) {
+        spinner.fail(err.message);
+      }
+    },
+    true,
+    false
+  ),
+
+  import: buildCommand(
+    async function(spinner, instanceId) {
+      try {
+        const availableSettings = await fleet.getAvailableSettings(null, 'confluence');
+        const settings = extractSettingsFromOpts(availableSettings);
+        spinner.info(`Importing instance "${instanceId}"`);
+        await fleet.add(instanceId, settings, process.stdin, message => {
+          if (spinner.isSpinning) {
+            spinner.succeed();
+          }
+          spinner.start(message);
+        });
         spinner.succeed();
-      }
-    } catch (err) {
-      spinner.fail(err.message);
-    }
-  }),
-
-  export: buildCommand(async function(spinner, instanceId) {
-    try {
-      (await fleet.createExportStream(instanceId)).pipe(process.stdout);
-    } catch (err) {
-      spinner.fail(err.message);
-    }
-  }),
-
-  import: buildCommand(async function(spinner, instanceId) {
-    try {
-      const availableSettings = await fleet.getAvailableSettings(null, 'confluence');
-      const settings = extractSettingsFromOpts(availableSettings);
-      spinner.info(`Importing instance "${instanceId}"`);
-      await fleet.add(instanceId, settings, process.stdin, message => {
-        if (spinner.isSpinning) {
-          spinner.succeed();
+        if (opts.start) {
+          await commands.start();
         }
-        spinner.start(message);
-      });
-      spinner.succeed();
-      if (opts.start) {
-        await commands.start();
+      } catch (err) {
+        spinner.fail(err.message);
       }
-    } catch (err) {
-      spinner.fail(err.message);
-    }
-  }),
+    },
+    true,
+    false
+  ),
 
-  clone: buildCommand(async function(spinner, instanceId) {
-    try {
-      const newInstanceId = opts._[2];
-      utils.validateInstanceId(newInstanceId);
-      spinner.info(`Cloning instance "${instanceId}" to "${newInstanceId}"`);
-      const availableSettings = await fleet.getAvailableSettings(instanceId);
-      const settings = extractSettingsFromOpts(availableSettings);
-      const importStream = await fleet.createExportStream(instanceId);
-      await fleet.add(newInstanceId, settings, importStream, message => {
-        if (spinner.isSpinning) {
-          spinner.succeed();
-        }
-        spinner.start(message);
-      });
-      spinner.succeed();
-      spinner.info('Finished cloning');
-    } catch (err) {
-      spinner.fail(err.message);
-    }
-  }),
+  clone: buildCommand(
+    async function(spinner, instanceId) {
+      try {
+        const newInstanceId = opts._[2];
+        utils.validateInstanceId(newInstanceId);
+        spinner.info(`Cloning instance "${instanceId}" to "${newInstanceId}"`);
+        const availableSettings = await fleet.getAvailableSettings(instanceId);
+        const settings = extractSettingsFromOpts(availableSettings);
+        const importStream = await fleet.createExportStream(instanceId);
+        await fleet.add(newInstanceId, settings, importStream, message => {
+          if (spinner.isSpinning) {
+            spinner.succeed();
+          }
+          spinner.start(message);
+        });
+        spinner.succeed();
+        spinner.info('Finished cloning');
+      } catch (err) {
+        spinner.fail(err.message);
+      }
+    },
+    true,
+    false
+  ),
 
   info: buildCommand(async function(spinner, instanceId) {
     try {
@@ -293,41 +331,55 @@ const commands = {
     }
   }),
 
-  list: buildCommand(async function(spinner) {
-    try {
-      const data = await fleet.list();
-      if (data.length) {
-        printList(data);
-      } else {
-        spinner.info('No instances added yet');
+  list: buildCommand(
+    async function(spinner) {
+      try {
+        const data = await fleet.list();
+        if (data.length) {
+          printList(data);
+        } else {
+          spinner.info('No instances added yet');
+        }
+      } catch (err) {
+        spinner.fail(err.message);
       }
-    } catch (err) {
-      spinner.fail(err.message);
-    }
-  }, false),
+    },
+    false,
+    false
+  ),
 
-  'global-settings': buildCommand(async function(spinner) {
-    try {
-      const type = opts.type || 'confluence';
-      const availableSettings = await fleet.getAvailableSettings(null, type);
-      const settings = extractSettingsFromOpts(availableSettings);
-      fleet.updateSettings(type, settings);
-      spinner.info('Updated global settings');
-      spinner.info('You might need to rebuild the instances');
-    } catch (err) {
-      spinner.fail(err.message);
-    }
-  }, false),
+  ls: (...args) => commands.list(...args),
 
-  'rebuild-all': buildCommand(async function(spinner) {
-    try {
-      spinner.start('Rebuilding all instances');
-      await fleet.rebuildAll();
-      spinner.succeed();
-    } catch (err) {
-      spinner.fail(err.message);
-    }
-  }, false)
+  'global-settings': buildCommand(
+    async function(spinner) {
+      try {
+        const type = opts.type || 'confluence';
+        const availableSettings = await fleet.getAvailableSettings(null, type);
+        const settings = extractSettingsFromOpts(availableSettings);
+        fleet.updateSettings(type, settings);
+        spinner.info('Updated global settings');
+        spinner.info('You might need to rebuild the instances');
+      } catch (err) {
+        spinner.fail(err.message);
+      }
+    },
+    false,
+    false
+  ),
+
+  'rebuild-all': buildCommand(
+    async function(spinner) {
+      try {
+        spinner.start('Rebuilding all instances');
+        await fleet.rebuildAll();
+        spinner.succeed();
+      } catch (err) {
+        spinner.fail(err.message);
+      }
+    },
+    false,
+    false
+  )
 };
 
 if (!cmd) {
