@@ -120,6 +120,16 @@ fleet master <id>
 
 * **id** The id of the instance
 
+#### Purge the cache of an instance
+
+Deletes the directories bundled-plugins, plugins-cache, plugins-osgi-cache, plugins-temp and bundled-plugins_language inside of the Confluence home directory.
+
+```
+fleet purge-cache <id>
+```
+
+* **id** The id of the instance
+
 #### Remove an instance
 
 Removing an instance will delete its Docker containers as well as the Confluence home directory and the database.

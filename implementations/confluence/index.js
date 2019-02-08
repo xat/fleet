@@ -2,6 +2,7 @@ const path = require('path');
 const mkdirp = require('mkdirp');
 const tarfs = require('tar-fs');
 const waitOn = require('wait-on');
+const rimraf = require('rimraf');
 const utils = require('../../utils');
 
 const CONFLUENCE_CONTEXT_PATH = '/confluence';
@@ -361,6 +362,22 @@ async function createExportStream(instanceId) {
   });
 }
 
+async function purgeCache(instanceId) {
+  const mountPath = utils.getMountPath(instanceId);
+
+  const directoriesToDelete = [
+    'home/bundled-plugins',
+    'home/plugins-cache',
+    'home/plugins-osgi-cache',
+    'home/plugins-temp',
+    'home/bundled-plugins_language'
+  ].map(dirName => path.join(mountPath, dirName));
+
+  for (p of directoriesToDelete) {
+    rimraf.sync(p);
+  }
+}
+
 module.exports = {
   add,
   remove,
@@ -371,5 +388,6 @@ module.exports = {
   rebuild,
   createExportStream,
   getAvailableSettings,
-  getMasterInstanceId
+  getMasterInstanceId,
+  purgeCache
 };

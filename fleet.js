@@ -99,6 +99,10 @@ async function getMasterInstanceId(fallbackImplementationType = 'confluence') {
   return implementations[fallbackImplementationType].getMasterInstanceId();
 }
 
+async function purgeCache(instanceId) {
+  return (await getImplementation(instanceId)).purgeCache(instanceId);
+}
+
 async function createExportStream(instanceId) {
   return (await getImplementation(instanceId)).createExportStream(instanceId);
 }
@@ -147,5 +151,6 @@ module.exports = {
   updateSettings: utils.updateSettings,
   updateInstanceSettings: utils.updateInstanceSettings,
   getAvailableSettings,
-  getMasterInstanceId
+  getMasterInstanceId,
+  purgeCache
 };

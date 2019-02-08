@@ -45,6 +45,9 @@ function printHelp() {
     # Set an instance to be the master:
     fleet master <id>
 
+    # Purge the cache of an instance:
+    fleet purge-cache <id>
+
     # Remove an instance:
     fleet remove <id>
 
@@ -134,30 +137,34 @@ function buildCommand(fn, withInstanceId = true, defaultToMaster = true) {
 }
 
 const commands = {
-  add: buildCommand(async function(spinner, instanceId) {
-    try {
-      const type = opts.type || 'confluence';
-      const availableSettings = await fleet.getAvailableSettings(null, type);
-      const settings = extractSettingsFromOpts(availableSettings);
+  add: buildCommand(
+    async function(spinner, instanceId) {
+      try {
+        const type = opts.type || 'confluence';
+        const availableSettings = await fleet.getAvailableSettings(null, type);
+        const settings = extractSettingsFromOpts(availableSettings);
 
-      spinner.info(`Preparing new instance "${instanceId}"`);
+        spinner.info(`Preparing new instance "${instanceId}"`);
 
-      await fleet.add(instanceId, settings, false, message => {
-        if (spinner.isSpinning) {
-          spinner.succeed();
+        await fleet.add(instanceId, settings, false, message => {
+          if (spinner.isSpinning) {
+            spinner.succeed();
+          }
+          spinner.start(message);
+        });
+
+        spinner.succeed();
+
+        if (opts.start) {
+          await commands.start();
         }
-        spinner.start(message);
-      });
-
-      spinner.succeed();
-
-      if (opts.start) {
-        await commands.start();
+      } catch (err) {
+        spinner.fail(err.message);
       }
-    } catch (err) {
-      spinner.fail(err.message);
-    }
-  }, true, false),
+    },
+    true,
+    false
+  ),
 
   start: buildCommand(async function(spinner, instanceId) {
     try {
@@ -235,8 +242,18 @@ const commands = {
 
   rebuild: buildCommand(async function(spinner, instanceId) {
     try {
-      spinner.start(`Rebuilding instance "${instanceId}"`);
+      spinner.start(`Rebuilding instance "${instanceId}".`);
       await fleet.rebuild(instanceId);
+      spinner.succeed();
+    } catch (err) {
+      spinner.fail(err.message);
+    }
+  }),
+
+  'purge-cache': buildCommand(async function(spinner, instanceId) {
+    try {
+      spinner.start(`Purching cache of instance "${instanceId}".`);
+      await fleet.purgeCache(instanceId);
       spinner.succeed();
     } catch (err) {
       spinner.fail(err.message);
