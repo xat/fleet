@@ -324,7 +324,7 @@ async function getAvailablePortRange() {
     }
   }
 
-  throw new Error('No more availabe ports.');
+  throw new Error('No more available ports.');
 }
 
 async function createSocatContainer(instanceId) {
