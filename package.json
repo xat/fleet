@@ -14,12 +14,15 @@
     "prettier": "^1.15.3"
   },
   "dependencies": {
+    "body-parser": "^1.19.0",
     "chalk": "^2.4.1",
+    "cors": "^2.8.5",
     "docker-build": "github:xat/docker-build#update-ignore-file",
     "docker-pull": "^1.1.0",
     "docker-remote-api": "^5.0.0",
     "easy-table": "^1.1.1",
     "end-of-stream": "^1.4.1",
+    "express": "^4.17.1",
     "got": "^9.4.0",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",

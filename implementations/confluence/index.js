@@ -214,7 +214,7 @@ async function buildConfluenceImage(settings, instanceId) {
   );
 }
 
-async function add(instanceId, instanceSettings = {}, importStream = false, onProgress = noop) {
+async function add(instanceId, instanceSettings = {}, importStream = false, onProgress = utils.noop) {
   mkdirp.sync(getDataPath(instanceId));
   mkdirp.sync(getHomePath(instanceId));
 
@@ -249,7 +249,7 @@ async function add(instanceId, instanceSettings = {}, importStream = false, onPr
   await createPostgresContainer(instanceId, portRange, settings);
 }
 
-async function start(instanceId, onProgress = noop) {
+async function start(instanceId, onProgress = utils.noop) {
   const confluenceContainer = await getConfluenceContainer(instanceId);
   const postgresContainer = await getPostgresContainer(instanceId);
 

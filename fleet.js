@@ -61,7 +61,7 @@ async function add(instanceId, instanceSettings = {}, importStream = false, onPr
   }
 }
 
-async function start(instanceId, onProgress = noop) {
+async function start(instanceId, onProgress = utils.noop) {
   return (await getImplementation(instanceId)).start(instanceId, onProgress);
 }
 
