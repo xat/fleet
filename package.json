@@ -20,7 +20,7 @@
     "docker-remote-api": "^5.0.0",
     "easy-table": "^1.1.1",
     "end-of-stream": "^1.4.1",
-    "got": "^9.4.0",
+    "got": "^11.8.5",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
     "opn": "^5.4.0",
